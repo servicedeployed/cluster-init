@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ingress/base/nginx
+  - monitor/base/prometheus
+
+patchesStrategicMerge:
+  - patches/nginx/default-cert-patch.yaml
