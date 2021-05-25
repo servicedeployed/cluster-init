@@ -1,0 +1,14 @@
+aws-upload:
+  stage: deploy
+  image: 
+    name: amazon/aws-cli
+    entrypoint: [""]
+  variables:
+    AWS_ACCESS_KEY_ID: "$AWS_ACCESS_KEY_ID"
+    AWS_SECRET_ACCESS_KEY: "$AWS_SECRET_ACCESS_KEY"
+    AWS_DEFAULT_REGION: "us-east-1"
+    AWS_BUCKET: "onsd.io"
+  environment:
+    name: development
+  script:
+    - aws s3 sync . s3://$AWS_BUCKET/public/kustomize/cluster-init --delete
