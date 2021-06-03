@@ -1019,6 +1019,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  annotations: null
   labels:
     app: nginx
     app.kubernetes.io/component: controller
@@ -1194,19 +1195,6 @@ spec:
       app.kubernetes.io/component: controller
       app.kubernetes.io/instance: ingress-nginx
       app.kubernetes.io/name: ingress-nginx
-  spec:
-    containers:
-    - args:
-      - /nginx-ingress-controller
-      - --publish-service=$(POD_NAMESPACE)/ingress-nginx-controller
-      - --election-id=ingress-controller-leader
-      - --ingress-class=nginx
-      - --configmap=$(POD_NAMESPACE)/ingress-nginx-controller
-      - --validating-webhook=:8443
-      - --validating-webhook-certificate=/usr/local/certificates/cert
-      - --validating-webhook-key=/usr/local/certificates/key
-      - --default-ssl-certificate=default/default-certificate
-      name: controller
   template:
     metadata:
       labels:
@@ -1225,6 +1213,7 @@ spec:
         - --validating-webhook=:8443
         - --validating-webhook-certificate=/usr/local/certificates/cert
         - --validating-webhook-key=/usr/local/certificates/key
+        - --default-ssl-certificate=default/default-certificate
         env:
         - name: POD_NAME
           valueFrom:
