@@ -2,9 +2,3 @@ deploy_yaml(
     yaml=kustomize("."),
     name="init"
 )
-
-deploy_yaml(
-    yaml=kustomize("./ingress/base/certmanager"),
-    name="certmanager"
-)
-
