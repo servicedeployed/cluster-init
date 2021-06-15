@@ -2,10 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-- dcgm-exporter.yaml
-- service-monitor.yaml
+  - namespace.yaml
+  - dcgm-exporter.yaml
+  - service-monitor.yaml
 
-namespace: gpu
+namespace: gpu-metrics
 
 commonLabels:
-  app: gpu
+  app: gpu-metrics
