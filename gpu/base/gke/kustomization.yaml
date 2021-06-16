@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
+  - nvidia-device-plugin.yaml
   - dcgm-exporter.yaml
   - service-monitor.yaml
 
