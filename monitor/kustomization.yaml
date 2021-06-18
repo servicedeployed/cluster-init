@@ -3,8 +3,8 @@ kind: Kustomization
 
 resources:
 - namespace.yaml
-- prometheus.yaml
-- alertmanager.yaml
+- prometheus
+- alertmanager
 
 namespace: prometheus
 

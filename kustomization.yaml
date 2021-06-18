@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - ingress/base/nginx
-  - monitor/base/prometheus
+  - monitor
 
 patchesStrategicMerge:
   - patches/nginx/default-cert-patch.yaml
