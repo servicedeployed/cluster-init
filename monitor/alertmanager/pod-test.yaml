@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "alertmanager-test-connection"
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['alertmanager:9093']
+  restartPolicy: Never
