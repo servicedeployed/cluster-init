@@ -7,7 +7,6 @@ resources:
   - statefulset.yaml
   - service.yaml
   - service-headless.yaml
-  - pod-test.yaml
 
 namespace: prometheus
 
