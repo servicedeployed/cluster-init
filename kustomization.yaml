@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ingress/base/nginx
   - monitor
+  - alert-manager-webhook
 
 patchesStrategicMerge:
   - patches/nginx/default-cert-patch.yaml
