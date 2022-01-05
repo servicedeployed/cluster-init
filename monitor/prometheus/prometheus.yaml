@@ -3,15 +3,33 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  labels:
-    app.kubernetes.io/name: kube-state-metrics
-    helm.sh/chart: kube-state-metrics-2.8.14
+  labels:    
+    helm.sh/chart: kube-state-metrics-4.0.2
     app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/part-of: kube-state-metrics
+    app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/version: "2.2.4"
   name: prometheus-kube-state-metrics
   namespace: default
 imagePullSecrets:
   []
+---
+# Source: prometheus/templates/alertmanager/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    component: "alertmanager"
+    app: prometheus
+    release: prometheus
+    chart: prometheus-15.0.2
+    heritage: Helm
+  name: prometheus-alertmanager
+  namespace: default
+  annotations:
+    {}
 ---
 # Source: prometheus/templates/node-exporter/serviceaccount.yaml
 apiVersion: v1
@@ -21,7 +39,7 @@ metadata:
     component: "node-exporter"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-node-exporter
   namespace: default
@@ -36,7 +54,7 @@ metadata:
     component: "pushgateway"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-pushgateway
   namespace: default
@@ -51,12 +69,35 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-server
   namespace: default
   annotations:
     {}
+---
+# Source: prometheus/templates/alertmanager/cm.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    component: "alertmanager"
+    app: prometheus
+    release: prometheus
+    chart: prometheus-15.0.2
+    heritage: Helm
+  name: prometheus-alertmanager
+  namespace: default
+data:
+  alertmanager.yml: |
+    global: {}
+    receivers:
+    - name: default-receiver
+    route:
+      group_interval: 5m
+      group_wait: 10s
+      receiver: default-receiver
+      repeat_interval: 3h
 ---
 # Source: prometheus/templates/server/cm.yaml
 apiVersion: v1
@@ -66,7 +107,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-server
   namespace: default
@@ -149,6 +190,10 @@ data:
         regex: true
         source_labels:
         - __meta_kubernetes_service_annotation_prometheus_io_scrape
+      - action: drop
+        regex: true
+        source_labels:
+        - __meta_kubernetes_service_annotation_prometheus_io_scrape_slow
       - action: replace
         regex: (https?)
         source_labels:
@@ -167,19 +212,22 @@ data:
         - __meta_kubernetes_service_annotation_prometheus_io_port
         target_label: __address__
       - action: labelmap
+        regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
+        replacement: __param_$1
+      - action: labelmap
         regex: __meta_kubernetes_service_label_(.+)
       - action: replace
         source_labels:
         - __meta_kubernetes_namespace
-        target_label: kubernetes_namespace
+        target_label: namespace
       - action: replace
         source_labels:
         - __meta_kubernetes_service_name
-        target_label: kubernetes_name
+        target_label: service
       - action: replace
         source_labels:
         - __meta_kubernetes_pod_node_name
-        target_label: kubernetes_node
+        target_label: node
     - job_name: kubernetes-service-endpoints-slow
       kubernetes_sd_configs:
       - role: endpoints
@@ -206,19 +254,22 @@ data:
         - __meta_kubernetes_service_annotation_prometheus_io_port
         target_label: __address__
       - action: labelmap
+        regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
+        replacement: __param_$1
+      - action: labelmap
         regex: __meta_kubernetes_service_label_(.+)
       - action: replace
         source_labels:
         - __meta_kubernetes_namespace
-        target_label: kubernetes_namespace
+        target_label: namespace
       - action: replace
         source_labels:
         - __meta_kubernetes_service_name
-        target_label: kubernetes_name
+        target_label: service
       - action: replace
         source_labels:
         - __meta_kubernetes_pod_node_name
-        target_label: kubernetes_node
+        target_label: node
       scrape_interval: 5m
       scrape_timeout: 30s
     - honor_labels: true
@@ -254,10 +305,10 @@ data:
         regex: __meta_kubernetes_service_label_(.+)
       - source_labels:
         - __meta_kubernetes_namespace
-        target_label: kubernetes_namespace
+        target_label: namespace
       - source_labels:
         - __meta_kubernetes_service_name
-        target_label: kubernetes_name
+        target_label: service
     - job_name: kubernetes-pods
       kubernetes_sd_configs:
       - role: pod
@@ -266,6 +317,15 @@ data:
         regex: true
         source_labels:
         - __meta_kubernetes_pod_annotation_prometheus_io_scrape
+      - action: drop
+        regex: true
+        source_labels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow
+      - action: replace
+        regex: (https?)
+        source_labels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+        target_label: __scheme__
       - action: replace
         regex: (.+)
         source_labels:
@@ -279,17 +339,20 @@ data:
         - __meta_kubernetes_pod_annotation_prometheus_io_port
         target_label: __address__
       - action: labelmap
+        regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+        replacement: __param_$1
+      - action: labelmap
         regex: __meta_kubernetes_pod_label_(.+)
       - action: replace
         source_labels:
         - __meta_kubernetes_namespace
-        target_label: kubernetes_namespace
+        target_label: namespace
       - action: replace
         source_labels:
         - __meta_kubernetes_pod_name
-        target_label: kubernetes_pod_name
+        target_label: pod
       - action: drop
-        regex: Pending|Succeeded|Failed
+        regex: Pending|Succeeded|Failed|Completed
         source_labels:
         - __meta_kubernetes_pod_phase
     - job_name: kubernetes-pods-slow
@@ -301,6 +364,11 @@ data:
         source_labels:
         - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow
       - action: replace
+        regex: (https?)
+        source_labels:
+        - __meta_kubernetes_pod_annotation_prometheus_io_scheme
+        target_label: __scheme__
+      - action: replace
         regex: (.+)
         source_labels:
         - __meta_kubernetes_pod_annotation_prometheus_io_path
@@ -313,35 +381,64 @@ data:
         - __meta_kubernetes_pod_annotation_prometheus_io_port
         target_label: __address__
       - action: labelmap
+        regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
+        replacement: __param_$1
+      - action: labelmap
         regex: __meta_kubernetes_pod_label_(.+)
       - action: replace
         source_labels:
         - __meta_kubernetes_namespace
-        target_label: kubernetes_namespace
+        target_label: namespace
       - action: replace
         source_labels:
         - __meta_kubernetes_pod_name
-        target_label: kubernetes_pod_name
+        target_label: pod
       - action: drop
-        regex: Pending|Succeeded|Failed
+        regex: Pending|Succeeded|Failed|Completed
         source_labels:
         - __meta_kubernetes_pod_phase
       scrape_interval: 5m
       scrape_timeout: 30s
+    alerting:
+      alertmanagers:
+      - kubernetes_sd_configs:
+          - role: pod
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          regex: default
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_app]
+          regex: prometheus
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_label_component]
+          regex: alertmanager
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_probe]
+          regex: .*
+          action: keep
+        - source_labels: [__meta_kubernetes_pod_container_port_number]
+          regex: "9093"
+          action: keep
   recording_rules.yml: |
     {}
   rules: |
     {}
 ---
-# Source: prometheus/charts/kube-state-metrics/templates/clusterrole.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
+# Source: prometheus/charts/kube-state-metrics/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
     app.kubernetes.io/name: kube-state-metrics
-    helm.sh/chart: kube-state-metrics-2.8.14
-    app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/component: metrics 
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "4.0.2"
+    app.kubernetes.io/part-of: kube-state-metrics 
+    helm.sh/chart: kube-state-metrics-4.0.2 
   name: prometheus-kube-state-metrics
 rules:
 
@@ -480,6 +577,20 @@ rules:
     - volumeattachments
   verbs: ["list", "watch"]
 ---
+# Source: prometheus/templates/alertmanager/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    component: "alertmanager"
+    app: prometheus
+    release: prometheus
+    chart: prometheus-15.0.2
+    heritage: Helm
+  name: prometheus-alertmanager
+rules:
+  []
+---
 # Source: prometheus/templates/pushgateway/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -488,7 +599,7 @@ metadata:
     component: "pushgateway"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-pushgateway
 rules:
@@ -502,7 +613,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-server
 rules:
@@ -537,14 +648,17 @@ rules:
       - get
 ---
 # Source: prometheus/charts/kube-state-metrics/templates/clusterrolebinding.yaml
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  labels:
-    app.kubernetes.io/name: kube-state-metrics
-    helm.sh/chart: kube-state-metrics-2.8.14
+  labels:    
+    helm.sh/chart: kube-state-metrics-4.0.2
     app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/part-of: kube-state-metrics
+    app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/version: "2.2.4"
   name: prometheus-kube-state-metrics
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -555,6 +669,26 @@ subjects:
   name: prometheus-kube-state-metrics
   namespace: default
 ---
+# Source: prometheus/templates/alertmanager/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    component: "alertmanager"
+    app: prometheus
+    release: prometheus
+    chart: prometheus-15.0.2
+    heritage: Helm
+  name: prometheus-alertmanager
+subjects:
+  - kind: ServiceAccount
+    name: prometheus-alertmanager
+    namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-alertmanager
+---
 # Source: prometheus/templates/pushgateway/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -563,7 +697,7 @@ metadata:
     component: "pushgateway"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-pushgateway
 subjects:
@@ -583,7 +717,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-server
 subjects:
@@ -601,11 +735,14 @@ kind: Service
 metadata:
   name: prometheus-kube-state-metrics
   namespace: default
-  labels:
+  labels:    
+    helm.sh/chart: kube-state-metrics-4.0.2
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/part-of: kube-state-metrics
     app.kubernetes.io/name: kube-state-metrics
-    helm.sh/chart: "kube-state-metrics-2.8.14"
-    app.kubernetes.io/instance: "prometheus"
-    app.kubernetes.io/managed-by: "Helm"
+    app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/version: "2.2.4"
   annotations:
     prometheus.io/scrape: 'true'
 spec:
@@ -615,9 +752,35 @@ spec:
     protocol: TCP
     port: 8080
     targetPort: 8080
-  selector:
+  
+  selector:    
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/instance: prometheus
+---
+# Source: prometheus/templates/alertmanager/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    component: "alertmanager"
+    app: prometheus
+    release: prometheus
+    chart: prometheus-15.0.2
+    heritage: Helm
+  name: prometheus-alertmanager
+  namespace: default
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 9093
+  selector:
+    component: "alertmanager"
+    app: prometheus
+    release: prometheus
+  sessionAffinity: None
+  type: "ClusterIP"
 ---
 # Source: prometheus/templates/node-exporter/svc.yaml
 apiVersion: v1
@@ -629,7 +792,7 @@ metadata:
     component: "node-exporter"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-node-exporter
   namespace: default
@@ -656,7 +819,7 @@ metadata:
     component: "pushgateway"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-pushgateway
   namespace: default
@@ -680,7 +843,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-server
   namespace: default
@@ -705,7 +868,7 @@ metadata:
     component: "node-exporter"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-node-exporter
   namespace: default
@@ -723,13 +886,13 @@ spec:
         component: "node-exporter"
         app: prometheus
         release: prometheus
-        chart: prometheus-13.0.0
+        chart: prometheus-15.0.2
         heritage: Helm
     spec:
       serviceAccountName: prometheus-node-exporter
       containers:
         - name: prometheus-node-exporter
-          image: "quay.io/prometheus/node-exporter:v1.0.1"
+          image: "quay.io/prometheus/node-exporter:v1.3.0"
           imagePullPolicy: "IfNotPresent"
           args:
             - --path.procfs=/host/proc
@@ -777,21 +940,30 @@ kind: Deployment
 metadata:
   name: prometheus-kube-state-metrics
   namespace: default
-  labels:
+  labels:    
+    helm.sh/chart: kube-state-metrics-4.0.2
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/part-of: kube-state-metrics
     app.kubernetes.io/name: kube-state-metrics
-    helm.sh/chart: "kube-state-metrics-2.8.14"
-    app.kubernetes.io/instance: "prometheus"
-    app.kubernetes.io/managed-by: "Helm"
+    app.kubernetes.io/instance: prometheus
+    app.kubernetes.io/version: "2.2.4"
 spec:
   selector:
-    matchLabels:
+    matchLabels:      
       app.kubernetes.io/name: kube-state-metrics
+      app.kubernetes.io/instance: prometheus
   replicas: 1
   template:
     metadata:
-      labels:
+      labels:        
+        helm.sh/chart: kube-state-metrics-4.0.2
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/component: metrics
+        app.kubernetes.io/part-of: kube-state-metrics
         app.kubernetes.io/name: kube-state-metrics
-        app.kubernetes.io/instance: "prometheus"
+        app.kubernetes.io/instance: prometheus
+        app.kubernetes.io/version: "2.2.4"
     spec:
       hostNetwork: false
       serviceAccountName: prometheus-kube-state-metrics
@@ -802,37 +974,14 @@ spec:
       containers:
       - name: kube-state-metrics
         args:
-        - --collectors=certificatesigningrequests
-        - --collectors=configmaps
-        - --collectors=cronjobs
-        - --collectors=daemonsets
-        - --collectors=deployments
-        - --collectors=endpoints
-        - --collectors=horizontalpodautoscalers
-        - --collectors=ingresses
-        - --collectors=jobs
-        - --collectors=limitranges
-        - --collectors=mutatingwebhookconfigurations
-        - --collectors=namespaces
-        - --collectors=networkpolicies
-        - --collectors=nodes
-        - --collectors=persistentvolumeclaims
-        - --collectors=persistentvolumes
-        - --collectors=poddisruptionbudgets
-        - --collectors=pods
-        - --collectors=replicasets
-        - --collectors=replicationcontrollers
-        - --collectors=resourcequotas
-        - --collectors=secrets
-        - --collectors=services
-        - --collectors=statefulsets
-        - --collectors=storageclasses
-        - --collectors=validatingwebhookconfigurations
-        - --collectors=volumeattachments
+        - --port=8080
+        - --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpoints,horizontalpodautoscalers,ingresses,jobs,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
+        - --telemetry-port=8081
         imagePullPolicy: IfNotPresent
-        image: "quay.io/coreos/kube-state-metrics:v1.9.7"
+        image: "k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.2.4"
         ports:
         - containerPort: 8080
+          name: "http"
         livenessProbe:
           httpGet:
             path: /healthz
@@ -846,6 +995,92 @@ spec:
           initialDelaySeconds: 5
           timeoutSeconds: 5
 ---
+# Source: prometheus/templates/alertmanager/deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: "alertmanager"
+    app: prometheus
+    release: prometheus
+    chart: prometheus-15.0.2
+    heritage: Helm
+  name: prometheus-alertmanager
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      component: "alertmanager"
+      app: prometheus
+      release: prometheus
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: "alertmanager"
+        app: prometheus
+        release: prometheus
+        chart: prometheus-15.0.2
+        heritage: Helm
+    spec:
+      serviceAccountName: prometheus-alertmanager
+      containers:
+        - name: prometheus-alertmanager
+          image: "quay.io/prometheus/alertmanager:v0.23.0"
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+          args:
+            - --config.file=/etc/config/alertmanager.yml
+            - --storage.path=/data
+            - --cluster.listen-address=
+            - --web.external-url=http://localhost:9093
+
+          ports:
+            - containerPort: 9093
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          resources:
+            {}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+            - name: storage-volume
+              mountPath: "/data"
+              subPath: ""
+        - name: prometheus-alertmanager-configmap-reload
+          image: "jimmidyson/configmap-reload:v0.5.0"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --volume-dir=/etc/config
+            - --webhook-url=http://127.0.0.1:9093/-/reload
+          resources:
+            {}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+              readOnly: true
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-alertmanager
+        - name: storage-volume
+          emptyDir:
+            {}
+---
 # Source: prometheus/templates/pushgateway/deploy.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -854,7 +1089,7 @@ metadata:
     component: "pushgateway"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-pushgateway
   namespace: default
@@ -871,14 +1106,15 @@ spec:
         component: "pushgateway"
         app: prometheus
         release: prometheus
-        chart: prometheus-13.0.0
+        chart: prometheus-15.0.2
         heritage: Helm
     spec:
       serviceAccountName: prometheus-pushgateway
       containers:
         - name: prometheus-pushgateway
-          image: "prom/pushgateway:v1.3.0"
+          image: "prom/pushgateway:v1.4.2"
           imagePullPolicy: "IfNotPresent"
+          args:
           ports:
             - containerPort: 9091
           livenessProbe:
@@ -907,7 +1143,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-13.0.0
+    chart: prometheus-15.0.2
     heritage: Helm
   name: prometheus-server
   namespace: default
@@ -924,13 +1160,14 @@ spec:
         component: "server"
         app: prometheus
         release: prometheus
-        chart: prometheus-13.0.0
+        chart: prometheus-15.0.2
         heritage: Helm
     spec:
+      enableServiceLinks: true
       serviceAccountName: prometheus-server
       containers:
         - name: prometheus-server-configmap-reload
-          image: "jimmidyson/configmap-reload:v0.4.0"
+          image: "jimmidyson/configmap-reload:v0.5.0"
           imagePullPolicy: "IfNotPresent"
           args:
             - --volume-dir=/etc/config
@@ -943,7 +1180,7 @@ spec:
               readOnly: true
 
         - name: prometheus-server
-          image: "quay.io/prometheus/prometheus:v2.22.1"
+          image: "quay.io/prometheus/prometheus:v2.31.1"
           imagePullPolicy: "IfNotPresent"
           args:
             - --storage.tsdb.retention.time=15d
@@ -958,6 +1195,7 @@ spec:
             httpGet:
               path: /-/ready
               port: 9090
+              scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 5
             timeoutSeconds: 4
@@ -967,6 +1205,7 @@ spec:
             httpGet:
               path: /-/healthy
               port: 9090
+              scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 15
             timeoutSeconds: 10
@@ -980,6 +1219,8 @@ spec:
             - name: storage-volume
               mountPath: /data
               subPath: ""
+      hostNetwork: false
+      dnsPolicy: ClusterFirst
       securityContext:
         fsGroup: 65534
         runAsGroup: 65534
@@ -992,4 +1233,4 @@ spec:
             name: prometheus-server
         - name: storage-volume
           emptyDir:
-            sizeLimit: 8Gi
+            {}
