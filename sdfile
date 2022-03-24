@@ -14,3 +14,9 @@ if bool(env("GPU_GKE")):
         yaml=kustomize("./gpu/base/gke"),
         name="gpu-gke"
     )
+
+if bool(env("GPU_AZURE")):
+    deploy_yaml(
+        yaml=kustomize("./gpu/base/azure"),
+        name="gpu-azure"
+    )
