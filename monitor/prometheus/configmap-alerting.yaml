@@ -20,7 +20,7 @@ data:
         - scheme: http
           static_configs:
           - targets:
-            - "alertmanager.prometheus:9093"
+            - "prometheus-alertmanager.prometheus:9093"
     rule_files:
     - /etc/config/recording_rules.yml
     - /etc/config/alerting_rules.yml
