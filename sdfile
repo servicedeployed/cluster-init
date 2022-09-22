@@ -20,3 +20,9 @@ if bool(env("GPU_AZURE")):
         yaml=kustomize("./gpu/base/azure"),
         name="gpu-azure"
     )
+
+if bool(env("INSTALL_DASHBOARD")):
+    deploy_yaml(
+        yaml=kustomize("./dashboard"),
+        name="kubernetes-dashboard"
+    )
