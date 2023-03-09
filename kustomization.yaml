@@ -2,9 +2,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ingress/base/nginx
   - monitor
   - alert-manager-webhook
-
-patchesStrategicMerge:
-  - patches/nginx/default-cert-patch.yaml
