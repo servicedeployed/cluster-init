@@ -6,3 +6,6 @@ resources:
 
 commonLabels:
   app: nginx
+
+patchesStrategicMerge:
+  - patches/default-cert-patch.yaml
