@@ -3,23 +3,31 @@ deploy_yaml(
     name="init"
 )
 
-if bool(env("GPU_AWS")):
+if bool(env("CLOUD_AWS")):
     deploy_yaml(
-        yaml=kustomize("./gpu/base/aws"),
-        name="gpu-aws"
+        yaml=kustomize("./clouds/aws"),
+        name="storage-aws"
     )
 
-if bool(env("GPU_GKE")):
-    deploy_yaml(
-        yaml=kustomize("./gpu/base/gke"),
-        name="gpu-gke"
-    )
+    if bool(env("GPU")):
+        deploy_yaml(
+            yaml=kustomize("./clouds/aws/gpu-driver"),
+            name="gpu-aws"
+        )
 
-if bool(env("GPU_AZURE")):
-    deploy_yaml(
-        yaml=kustomize("./gpu/base/azure"),
-        name="gpu-azure"
-    )
+if bool(env("CLOUD_GKE")):
+    if bool(env("GPU")):
+        deploy_yaml(
+            yaml=kustomize("./clouds/gke/gpu-driver"),
+            name="gpu-gke"
+        )
+
+if bool(env("CLOUD_AZURE")):
+    if bool(env("GPU")):
+        deploy_yaml(
+            yaml=kustomize("./clouds/azure/gpu-driver"),
+            name="gpu-azure"
+        )
 
 if bool(env("INSTALL_NGINX")):
     deploy_yaml(
