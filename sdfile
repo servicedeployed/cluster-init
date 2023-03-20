@@ -21,6 +21,18 @@ if bool(env("GPU_AZURE")):
         name="gpu-azure"
     )
 
+if bool(env("INSTALL_NGINX")):
+    deploy_yaml(
+        yaml=kustomize("./ingress/base/nginx"),
+        name="nginx-ingress"
+    )
+
+if bool(env("INSTALL_CERTMANAGER")):
+    deploy_yaml(
+        yaml=kustomize("./ingress/base/certmanager"),
+        name="certmanager"
+    )
+
 if bool(env("INSTALL_DASHBOARD")):
     deploy_yaml(
         yaml=kustomize("./dashboard"),
