@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: alert-webhook
+  name: sd-alert-webhook
   labels:
-    app: alert-webhook
+    app: sd-alert-webhook
 spec:
   type: ClusterIP
   ports:
@@ -12,4 +12,4 @@ spec:
     protocol: TCP
     targetPort: http
   selector:
-    app: alert-webhook
+    app: sd-alert-webhook
