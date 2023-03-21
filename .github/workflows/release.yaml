@@ -28,6 +28,10 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v3
 
+      - name: Run Helm Puller
+        run: |
+          ./charts/pull-helm-apps.sh
+
       - name: Add dependency chart repos
         run: |
           helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
