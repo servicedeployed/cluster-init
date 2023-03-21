@@ -10,4 +10,107 @@ entries:
     urls:
     - https://github.com/servicedeployed/cluster-init/releases/download/alert-manager-webhook-1.0.1/alert-manager-webhook-1.0.1.tgz
     version: 1.0.1
-generated: "2023-03-21T16:19:36.038367204Z"
+  aws-ebs-csi-driver:
+  - apiVersion: v2
+    appVersion: 1.17.0
+    created: "2023-03-21T16:47:06.360914672Z"
+    description: A Helm chart for AWS EBS CSI Driver
+    digest: 2ed159140169d1b84dbc3915fe1e6760986853987ecccb943ac2c89859dc3471
+    home: https://github.com/kubernetes-sigs/aws-ebs-csi-driver
+    keywords:
+    - aws
+    - ebs
+    - csi
+    kubeVersion: '>=1.17.0-0'
+    maintainers:
+    - name: Kubernetes Authors
+      url: https://github.com/kubernetes-sigs/aws-ebs-csi-driver/
+    name: aws-ebs-csi-driver
+    sources:
+    - https://github.com/kubernetes-sigs/aws-ebs-csi-driver
+    urls:
+    - https://github.com/servicedeployed/cluster-init/releases/download/aws-ebs-csi-driver-2.17.2/aws-ebs-csi-driver-2.17.2.tgz
+    version: 2.17.2
+  kubernetes-dashboard:
+  - apiVersion: v2
+    appVersion: v2.7.0
+    created: "2023-03-21T16:47:06.599294031Z"
+    dependencies:
+    - condition: metrics-server.enabled
+      name: metrics-server
+      repository: https://kubernetes-sigs.github.io/metrics-server/
+      version: 3.8.3
+    description: General-purpose web UI for Kubernetes clusters
+    digest: 056b7286a3307a6c05cfd7df8cf2f20cadb0f7074836a05f8231b38d0c26f38d
+    home: https://github.com/kubernetes/dashboard
+    icon: https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.svg
+    keywords:
+    - kubernetes
+    - dashboard
+    kubeVersion: '>=1.19.0-0'
+    maintainers:
+    - email: cdesaintmartin@wiremind.fr
+      name: desaintmartin
+    name: kubernetes-dashboard
+    sources:
+    - https://github.com/kubernetes/dashboard
+    urls:
+    - https://github.com/servicedeployed/cluster-init/releases/download/kubernetes-dashboard-6.0.6/kubernetes-dashboard-6.0.6.tgz
+    version: 6.0.6
+  prometheus:
+  - annotations:
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Chart Source
+          url: https://github.com/prometheus-community/helm-charts
+        - name: Upstream Project
+          url: https://github.com/prometheus/prometheus
+    apiVersion: v2
+    appVersion: v2.41.0
+    created: "2023-03-21T16:47:06.848631156Z"
+    dependencies:
+    - condition: alertmanager.enabled
+      name: alertmanager
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 0.24.*
+    - condition: kube-state-metrics.enabled
+      name: kube-state-metrics
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 4.30.*
+    - condition: prometheus-node-exporter.enabled
+      name: prometheus-node-exporter
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 4.8.*
+    - condition: prometheus-pushgateway.enabled
+      name: prometheus-pushgateway
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 2.0.*
+    description: Prometheus is a monitoring system and time series database.
+    digest: 001f6b3719416279ab814d1680261b4d5eb8af4e803a8a1068a4ae67a287b3e3
+    home: https://prometheus.io/
+    icon: https://raw.githubusercontent.com/prometheus/prometheus.github.io/master/assets/prometheus_logo-cb55bb5c346.png
+    keywords:
+    - monitoring
+    - prometheus
+    kubeVersion: '>=1.16.0-0'
+    maintainers:
+    - email: gianrubio@gmail.com
+      name: gianrubio
+    - email: zanhsieh@gmail.com
+      name: zanhsieh
+    - email: miroslav.hadzhiev@gmail.com
+      name: Xtigyro
+    - email: naseem@transit.app
+      name: naseemkullah
+    name: prometheus
+    sources:
+    - https://github.com/prometheus/alertmanager
+    - https://github.com/prometheus/prometheus
+    - https://github.com/prometheus/pushgateway
+    - https://github.com/prometheus/node_exporter
+    - https://github.com/kubernetes/kube-state-metrics
+    type: application
+    urls:
+    - https://github.com/servicedeployed/cluster-init/releases/download/prometheus-20.0.0/prometheus-20.0.0.tgz
+    version: 20.0.0
+generated: "2023-03-21T16:47:06.848647056Z"
