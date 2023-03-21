@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  alert-manager-webhook:
+  - apiVersion: v2
+    created: "2023-03-21T16:19:36.038363604Z"
+    description: Service Deployed Alert Manager Webhook for provisioned clusters.
+      Needs Prometheus.
+    digest: 9191b8b221435c6a599605a59bebc3c227fa0b1fbc3087f495269770190531fe
+    name: alert-manager-webhook
+    urls:
+    - https://github.com/servicedeployed/cluster-init/releases/download/alert-manager-webhook-1.0.1/alert-manager-webhook-1.0.1.tgz
+    version: 1.0.1
+generated: "2023-03-21T16:19:36.038367204Z"
