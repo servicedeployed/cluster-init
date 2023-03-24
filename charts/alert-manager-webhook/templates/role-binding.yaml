@@ -7,6 +7,6 @@ subjects:
   name: {{ include "alert-manager-webhook.serviceAccountName" . }}
   apiGroup: ""
 roleRef:
-  kind: ClusterRole
+  kind: Role
   name: {{ include "alert-manager-webhook.fullname" . }}
   apiGroup: ""
