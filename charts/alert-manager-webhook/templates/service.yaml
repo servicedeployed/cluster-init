@@ -10,6 +10,6 @@ spec:
   - port: 8080
     name: alert-webhook
     protocol: TCP
-    targetPort: http
+    targetPort: webhook
   selector:
     {{- include "alert-manager-webhook.selectorLabels" . | nindent 4 }}
