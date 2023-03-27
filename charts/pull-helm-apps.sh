@@ -7,6 +7,7 @@ SHOULD_UNTAR="${UNTAR:-true}"
 # Format:
 # Repo_Name Repo_URL Chart_Name Chart_Version
 HELM_REPOS=( \
+    'alert-manager-webhook https://servicedeployed.github.io/alert-manager-webhook alert-manager-webhook 1.0.5' \
     'prometheus-community https://prometheus-community.github.io/helm-charts prometheus 20.0.0' \
     'aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver aws-ebs-csi-driver 2.17.2' \
     'k8s-dashboard https://kubernetes.github.io/dashboard kubernetes-dashboard 6.0.6' \
